@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import Rx from 'rxjs/Rx';
 
-console.log('RxJS Boiler Running...');
+/*console.log('RxJS Boiler Running...');
 
 const btn = $('#btn');
 const input = $('#input');
@@ -86,3 +86,45 @@ Rx.Observable.of('Hello')
 .mergeMap(v=>{
     return Rx.Observable.of(v + 'Everyone');
 }).subscribe(x=>console.log(x));
+*/
+//Creating observable
+
+//is nothing than a function that takes an observer
+const myObservable = (observer) => {
+let i = 0;
+const id = setInterval(() => {
+    observer.next(i++);
+    if(i === 10)
+    {
+        observer.complete()
+    }
+}, 200);
+ //returns teardown logic
+ return () => clearInterval(id);
+};
+// this is like subscribing
+const teardown = myObservable({next(x) {console.log("next " + x)}, error(err) {console.log("error " + err)}, complete(){console.log("complete")}});
+
+setTimeout(()=>{
+    teardown();
+}, 1000);
+
+//operator is a function that takes an observable and returns and observable
+//the operator is going to subscribe to the source observable with its own observer and passing the orignal observer,
+// so in other words wrapping one observer inside another one.
+
+const map = (observable, mapFn) =>
+{
+    (observer) => {
+        return observable({
+            next(x) {observer.next(mapFn(x))},
+            error(err) {observer.error(err)},
+            complete() {observer.complete()}
+        });
+    }
+};
+
+const source = map(myObservable, x => x + '!');
+
+const teardown = source({next(x) {console.log(x)}});
+
